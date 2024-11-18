@@ -150,7 +150,7 @@ def main():
         layout="wide"
     )
 
-    image_path = "gita_banner.jpg"  # Replace with your image path
+    image_path = "WhatsApp Image 2024-11-18 at 11.40.34_076eab8e.jpg"  
     if os.path.exists(image_path):  # Check if file exists locally
         image = Image.open(image_path)
     else:
