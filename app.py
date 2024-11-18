@@ -154,11 +154,10 @@ def main():
     image_path = "WhatsApp Image 2024-11-18 at 11.40.34_076eab8e.jpg"  
     if os.path.exists(image_path):  # Check if file exists locally
         image = Image.open(image_path)
+        resized_image = image.resize((800, 200))
+        st.image(resized_image, use_column_width=True, caption="Bhagavad Gita - Eternal Wisdom")
     else:
         st.error("Image file not found. Please upload the image.")
-
-    # Display the image in the UI
-    st.image(image, use_column_width=True, caption="Bhagavad Gita - Eternal Wisdom")
 
     initialize_session_state()
 
