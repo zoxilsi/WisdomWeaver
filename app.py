@@ -1,158 +1,221 @@
 
+import requests
+import pandas as pd
 import streamlit as st
-import re
-from typing import Dict, List, Tuple
-import random
-from datetime import datetime
-
-class GitaBot:
-    def __init__(self):
-        # Knowledge base of Gita verses and their themes
-        self.verses = {
-            "karma": [
-                ("Chapter 2, Verse 47", "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions. Never consider yourself to be the cause of the results, and never be motivated by inaction."),
-                ("Chapter 3, Verse 19", "Therefore, without attachment, perform always the work that has to be done, for by performing work without attachment, one attains the Supreme."),
-            ],
-            "dharma": [
-                ("Chapter 2, Verse 31", "Considering your dharma (duty), you should not waver. Indeed, for a warrior, there is nothing better than a battle fought on principles of dharma."),
-                ("Chapter 18, Verse 47", "It is better to perform one's own duties imperfectly than to perform another's duties perfectly. By fulfilling the obligations born of one's nature, one never incurs sin."),
-            ],
-            "mind_control": [
-                ("Chapter 6, Verse 35", "The mind is restless, turbulent, obstinate and very strong, O Krishna, and to subdue it is more difficult than controlling the wind."),
-                ("Chapter 6, Verse 36", "But it is possible by suitable practice and detachment."),
-            ],
-            "knowledge": [
-                ("Chapter 4, Verse 33", "Superior to the sacrifice of material possessions is the sacrifice of knowledge, O Arjuna. All actions in their entirety culminate in knowledge."),
-                ("Chapter 4, Verse 34", "Learn the Truth by approaching a spiritual master. Inquire from him with reverence, and render service unto him."),
-            ],
-            "peace": [
-                ("Chapter 2, Verse 66", "One who is not in transcendental consciousness can have neither a controlled mind nor steady intelligence, without which there is no possibility of peace. And how can there be any happiness without peace?"),
-                ("Chapter 5, Verse 29", "A person in full consciousness of Me, knowing Me to be the ultimate beneficiary of all sacrifices and austerities, the Supreme Lord of all planets and demigods, and the benefactor and well-wisher of all living entities, attains peace from the pangs of material miseries."),
-            ]
-        }
-        
-        self.keywords = {
-            "karma": ["action", "work", "duty", "results", "fruits", "deeds", "karma", "doing"],
-            "dharma": ["duty", "righteousness", "dharma", "responsibility", "obligation", "right"],
-            "mind_control": ["mind", "control", "meditation", "focus", "concentration", "thoughts"],
-            "knowledge": ["knowledge", "wisdom", "learning", "understanding", "truth", "awareness"],
-            "peace": ["peace", "happiness", "tranquility", "calm", "serenity", "contentment"]
-        }
-
-    def preprocess_text(self, text: str) -> str:
-        text = text.lower()
-        text = re.sub(r'[^\w\s]', '', text)
-        return text
-
-    def identify_themes(self, question: str) -> List[str]:
-        question = self.preprocess_text(question)
-        words = question.split()
-        
-        identified_themes = []
-        for theme, theme_keywords in self.keywords.items():
-            if any(keyword in words for keyword in theme_keywords):
-                identified_themes.append(theme)
-        
-        return identified_themes or ["karma"]
-
-    def get_response(self, question: str) -> Dict:
-        themes = self.identify_themes(question)
-        selected_theme = random.choice(themes)
-        verse_reference, verse_text = random.choice(self.verses[selected_theme])
-        
-        response = {
-            "theme": selected_theme.capitalize(),
-            "reference": verse_reference,
-            "verse": verse_text,
-            "explanation": f"Based on your question, I've shared this verse about {selected_theme}. "
-                         f"The Bhagavad Gita teaches us that {self._get_theme_explanation(selected_theme)}"
-        }
-        
-        return response
-
-    def _get_theme_explanation(self, theme: str) -> str:
-        explanations = {
-            "karma": "we should perform our duties without attachment to the results.",
-            "dharma": "following one's righteous duty is the path to spiritual growth.",
-            "mind_control": "controlling the mind through practice and detachment is essential for spiritual progress.",
-            "knowledge": "true knowledge is the highest form of spiritual practice.",
-            "peace": "true peace comes from understanding our relationship with the divine."
-        }
-        return explanations.get(theme, "this wisdom can guide us in our spiritual journey.")
+import os
+import google.generativeai as genai
+from typing import Dict
+import json
+import asyncio
 
 def initialize_session_state():
+    """Initialize Streamlit session state variables."""
     if 'messages' not in st.session_state:
         st.session_state.messages = []
+
     if 'bot' not in st.session_state:
-        st.session_state.bot = GitaBot()
+        api_key = "AIzaSyAjsN0jG48ToHMb-mrVoWngCfU0R6DsOtk"  
+        if not api_key:
+            st.error("Please set the GEMINI_API_KEY in your Streamlit secrets.")
+            st.stop()
+        st.session_state.bot = GitaGeminiBot(api_key)
+
+class GitaGeminiBot:
+    def __init__(self, api_key: str):
+        """Initialize the Gita bot with Gemini API."""
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-pro')
+        self.verses_db = self.load_gita_database()
+        
+    def load_gita_database(self) -> Dict:
+        """Load the Bhagavad Gita dataset."""
+        path = "bhagavad_gita_verses.csv"
+        verses_df = pd.read_csv(path)
+        
+        verses_db = {}
+        for _, row in verses_df.iterrows():
+            chapter = f"chapter_{row['chapter_number']}"
+            if chapter not in verses_db:
+                verses_db[chapter] = {
+                    "title": row['chapter_title'],
+                    "verses": {}
+                }
+            verse_num = str(row['chapter_verse'])
+            verses_db[chapter]["verses"][verse_num] = {
+                "translation": row['translation']
+            }
+        return verses_db
+
+    def format_response(self, raw_text: str) -> Dict:
+        """Format the response into a structured dictionary."""
+        try:
+            # First attempt: Try to parse as JSON directly
+            try:
+                return json.loads(raw_text)
+            except json.JSONDecodeError:
+                pass
+
+            # Second attempt: Try to extract JSON-like content
+            if '{' in raw_text and '}' in raw_text:
+                json_start = raw_text.find('{')
+                json_end = raw_text.rfind('}') + 1
+                json_str = raw_text[json_start:json_end]
+                try:
+                    return json.loads(json_str)
+                except json.JSONDecodeError:
+                    pass
+
+            # Third attempt: Parse structured text
+            lines = raw_text.split('\n')
+            response = {
+                "verse_reference": "",
+                "sanskrit": "",
+                "translation": "",
+                "explanation": "",
+                "application": ""
+            }
+            
+            current_section = None
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                if "Chapter" in line and "Verse" in line:
+                    response["verse_reference"] = line
+                elif line.startswith("Sanskrit:"):
+                    response["sanskrit"] = line.replace("Sanskrit:", "").strip()
+                elif line.startswith("Translation:"):
+                    response["translation"] = line.replace("Translation:", "").strip()
+                elif line.startswith("Explanation:"):
+                    current_section = "explanation"
+                    response["explanation"] = line.replace("Explanation:", "").strip()
+                elif line.startswith("Application:"):
+                    current_section = "application"
+                    response["application"] = line.replace("Application:", "").strip()
+                elif current_section:
+                    response[current_section] += " " + line
+            
+            return response
+
+        except Exception as e:
+            print(f"Error formatting response: {str(e)}")
+            return {
+                "verse_reference": "Unable to parse verse",
+                "sanskrit": "",
+                "translation": raw_text,
+                "explanation": "",
+                "application": ""
+            }
+
+    async def get_response(self, question: str) -> Dict:
+        """Generate response using Gemini API."""
+        try:
+            prompt = f"""
+            Based on the Bhagavad Gita's teachings, provide guidance for this question:
+            {question}
+
+            Format your response like this:
+            Chapter X, Verse Y
+            Sanskrit: [Sanskrit verse]
+            Translation: [English translation]
+            Explanation: [Clear explanation of the verse's meaning]
+            Application: [How to apply this teaching in modern life]
+
+            Keep the format strict and consistent.
+            """
+
+            response = self.model.generate_content(prompt)
+            
+            if not response.text:
+                raise ValueError("Empty response received from the model")
+
+            return self.format_response(response.text)
+
+        except Exception as e:
+            print(f"Error getting response: {str(e)}")
+            return {
+                "verse_reference": "Error",
+                "sanskrit": "",
+                "translation": f"An error occurred: {str(e)}",
+                "explanation": "Please try again.",
+                "application": ""
+            }
 
 def main():
+    """Main Streamlit application."""
     st.set_page_config(
-        page_title="Bhagavad Gita Wisdom Bot",
+        page_title="Bhagavad Gita Wisdom Weaver",
         page_icon="🕉️",
-        layout="centered"
+        layout="wide"
     )
+
+    image_path = "gita_banner.jpg"  # Replace with your image path
+    if os.path.exists(image_path):  # Check if file exists locally
+        image = Image.open(image_path)
+    else:
+        st.error("Image file not found. Please upload the image.")
+
+    # Display the image in the UI
+    st.image(image, use_column_width=True, caption="Bhagavad Gita - Eternal Wisdom")
 
     initialize_session_state()
 
-    # Header
-    st.title("🕉️ Bhagavad Gita Wisdom Bot")
-    st.markdown("""
-    Welcome to the Bhagavad Gita Wisdom Bot! Ask any question about life, duty, peace, 
-    or spiritual growth, and receive guidance from the sacred text of the Bhagavad Gita.
-    """)
+    col1, col2 = st.columns([2, 1])
 
-    # Sidebar with available themes
-    with st.sidebar:
-        st.header("Available Themes")
-        themes = ["Karma (Action)", "Dharma (Duty)", "Mind Control", 
-                 "Knowledge", "Peace"]
-        for theme in themes:
-            st.markdown(f"• {theme}")
-        
-        st.markdown("---")
-        st.markdown("""
-        ### How to Use
-        1. Type your question in the text box
-        2. Press Enter or click 'Ask'
-        3. Receive wisdom from the Gita
-        """)
+    with col1:
+        st.title("🕉️ Bhagavad Gita Wisdom")
+        st.markdown("""Ask questions about life, dharma, and spirituality to receive guidance from the timeless wisdom of the Bhagavad Gita.""")
 
-    # Chat interface
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            if message["role"] == "user":
-                st.markdown(message["content"])
-            else:
-                st.markdown(f"**{message['reference']}**")
-                st.markdown(f"*{message['verse']}*")
-                st.markdown(message["explanation"])
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                if message["role"] == "user":
+                    st.markdown(message["content"])
+                else:
+                    if message["verse_reference"]:
+                        st.markdown(f"**{message['verse_reference']}**")
+                    if message.get('sanskrit'):
+                        st.markdown(f"*{message['sanskrit']}*")
+                    if message.get('translation'):
+                        st.markdown(message["translation"])
+                    if message.get('explanation'):
+                        st.markdown("### Understanding")
+                        st.markdown(message["explanation"])
+                    if message.get('application'):
+                        st.markdown("### Modern Application")
+                        st.markdown(message["application"])
 
-    # User input
-    if question := st.chat_input("Ask your question here..."):
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": question})
-        
-        # Get bot response
-        response = st.session_state.bot.get_response(question)
-        
-        # Add bot response to chat history
-        st.session_state.messages.append({
-            "role": "assistant",
-            "reference": response["reference"],
-            "verse": response["verse"],
-            "explanation": response["explanation"]
-        })
-        
-        # Rerun to update the chat display
-        st.rerun()
+        if question := st.chat_input("Ask your question here..."):
+            st.session_state.messages.append({"role": "user", "content": question})
 
-    # Footer
+            with st.spinner("Contemplating your question..."):
+                response = asyncio.run(st.session_state.bot.get_response(question))
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    **response
+                })
+                st.rerun()
+
+    with col2:
+        st.sidebar.title("Browse Chapters")
+        chapters = list(st.session_state.bot.verses_db.keys())
+        selected_chapter = st.sidebar.selectbox(
+            "Select Chapter",
+            chapters,
+            format_func=lambda x: f"{x}: {st.session_state.bot.verses_db[x]['title']}"
+        )
+
+        if selected_chapter:
+            st.sidebar.markdown(f"### {st.session_state.bot.verses_db[selected_chapter]['title']}")
+            verses = st.session_state.bot.verses_db[selected_chapter]['verses']
+            for verse_num, verse_data in verses.items():
+                with st.sidebar.expander(f"Verse {verse_num}"):
+                    st.markdown(verse_data['translation'])
+
     st.markdown("---")
     st.markdown(
-        "Made with ❤️ | "
-        "Remember: The Gita's wisdom is vast and deep. "
-        "These are selected verses for guidance, but please consult spiritual teachers for deeper understanding."
+        "💫 This application uses the Gemini API to provide insights from the Bhagavad Gita. "
+        "For deeper understanding, please consult with qualified spiritual teachers."
     )
 
 if __name__ == "__main__":
