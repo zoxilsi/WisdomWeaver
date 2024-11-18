@@ -7,6 +7,7 @@ import google.generativeai as genai
 from typing import Dict
 import json
 import asyncio
+from PIL import Image 
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
