@@ -157,7 +157,8 @@ def main():
         max_width = 800
         aspect_ratio = image.height / image.width
         resized_image = image.resize((max_width, int(max_width * aspect_ratio)))
-        st.image(resized_image, use_column_width=True, caption="Bhagavad Gita - Eternal Wisdom")
+        st.image(resized_image, use_container_width=True, caption="Bhagavad Gita - Eternal Wisdom")
+
     else:
         st.error("Image file not found. Please upload the image.")
 
