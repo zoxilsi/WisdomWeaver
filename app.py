@@ -54,6 +54,7 @@ class GitaGeminiBot:
             try:
                 return json.loads(raw_text)
             except json.JSONDecodeError:
+                print("Exception1")
                 pass
 
             # Second attempt: Try to extract JSON-like content
@@ -64,6 +65,7 @@ class GitaGeminiBot:
                 try:
                     return json.loads(json_str)
                 except json.JSONDecodeError:
+                    print("Exception1")
                     pass
 
             # Third attempt: Parse structured text
