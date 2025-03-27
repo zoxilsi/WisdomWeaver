@@ -25,7 +25,7 @@ class GitaGeminiBot:
     def __init__(self, api_key: str):
         """Initialize the Gita bot with Gemini API."""
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.verses_db = self.load_gita_database()
         
     def load_gita_database(self) -> Dict:
