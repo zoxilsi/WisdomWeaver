@@ -7,7 +7,7 @@ import google.generativeai as genai
 from typing import Dict
 import json
 import asyncio
-from PIL import Image 
+from PIL import Image
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
@@ -15,7 +15,7 @@ def initialize_session_state():
         st.session_state.messages = []
 
     if 'bot' not in st.session_state:
-        api_key = "AIzaSyDJNmx7PKmb92aHcrwBK7L5IKHipNzjVck"  
+        api_key = "AIzaSyDJNmx7PKmb92aHcrwBK7L5IKHipNzjVck"
         if not api_key:
             st.error("Please set the GEMINI_API_KEY in your Streamlit secrets.")
             st.stop()
@@ -27,12 +27,12 @@ class GitaGeminiBot:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.verses_db = self.load_gita_database()
-        
+
     def load_gita_database(self) -> Dict:
         """Load the Bhagavad Gita dataset."""
         path = "bhagavad_gita_verses.csv"
         verses_df = pd.read_csv(path)
-        
+
         verses_db = {}
         for _, row in verses_df.iterrows():
             chapter = f"chapter_{row['chapter_number']}"
@@ -77,13 +77,13 @@ class GitaGeminiBot:
                 "explanation": "",
                 "application": ""
             }
-            
+
             current_section = None
             for line in lines:
                 line = line.strip()
                 if not line:
                     continue
-                
+
                 if "Chapter" in line and "Verse" in line:
                     response["verse_reference"] = line
                 elif line.startswith("Sanskrit:"):
@@ -98,7 +98,7 @@ class GitaGeminiBot:
                     response["application"] = line.replace("Application:", "").strip()
                 elif current_section:
                     response[current_section] += " " + line
-            
+
             return response
 
         except Exception as e:
@@ -129,7 +129,7 @@ class GitaGeminiBot:
             """
 
             response = self.model.generate_content(prompt)
-            
+
             if not response.text:
                 raise ValueError("Empty response received from the model")
 
@@ -153,14 +153,13 @@ def main():
         layout="wide"
     )
 
-    image_path = "WhatsApp Image 2024-11-18 at 11.40.34_076eab8e.jpg"  
-    if os.path.exists(image_path):  # Check if file exists locally
+    image_path = "WhatsApp Image 2024-11-18 at 11.40.34_076eab8e.jpg"
+    if os.path.exists(image_path):
         image = Image.open(image_path)
         max_width = 800
         aspect_ratio = image.height / image.width
         resized_image = image.resize((max_width, int(max_width * aspect_ratio)))
         st.image(resized_image, use_container_width=True, caption="Bhagavad Gita - Eternal Wisdom")
-
     else:
         st.error("Image file not found. Please upload the image.")
 
@@ -216,6 +215,17 @@ def main():
             for verse_num, verse_data in verses.items():
                 with st.sidebar.expander(f"Verse {verse_num}"):
                     st.markdown(verse_data['translation'])
+
+        # --- New Section for User Question History ---
+        st.sidebar.markdown("---")
+        st.sidebar.title("Your Questions History")
+        user_questions = [msg["content"] for msg in st.session_state.messages if msg["role"] == "user"]
+        if user_questions:
+            for i, q in enumerate(user_questions):
+                st.sidebar.markdown(f"**{i+1}.** {q}")
+        else:
+            st.sidebar.info("No questions asked yet in this session.")
+        # --- End of New Section ---
 
     st.markdown("---")
     st.markdown(
