@@ -15,7 +15,7 @@ def initialize_session_state():
         st.session_state.messages = []
 
     if 'bot' not in st.session_state:
-        api_key = "AIzaSyDJNmx7PKmb92aHcrwBK7L5IKHipNzjVck"
+        api_key = ""
         if not api_key:
             st.error("Please set the GEMINI_API_KEY in your Streamlit secrets.")
             st.stop()
