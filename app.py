@@ -8,6 +8,12 @@ from typing import Dict
 import json
 import asyncio
 from PIL import Image
+import nest_asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_key = os.getenv("GOOGLE_API_KEY")
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
@@ -15,7 +21,7 @@ def initialize_session_state():
         st.session_state.messages = []
 
     if 'bot' not in st.session_state:
-        api_key = ""
+        
         if not api_key:
             st.error("Please set the GEMINI_API_KEY in your Streamlit secrets.")
             st.stop()
@@ -128,8 +134,7 @@ class GitaGeminiBot:
             Keep the format strict and consistent.
             """
 
-            response = self.model.generate_content(prompt)
-
+            response = await self.model.generate_content_async(prompt)
             if not response.text:
                 raise ValueError("Empty response received from the model")
 
@@ -145,7 +150,7 @@ class GitaGeminiBot:
                 "application": ""
             }
 
-def main():
+async def main():
     """Main Streamlit application."""
     st.set_page_config(
         page_title="Bhagavad Gita Wisdom Weaver",
@@ -193,7 +198,7 @@ def main():
             st.session_state.messages.append({"role": "user", "content": question})
 
             with st.spinner("Contemplating your question..."):
-                response = asyncio.run(st.session_state.bot.get_response(question))
+                response = await st.session_state.bot.get_response(question)
                 st.session_state.messages.append({
                     "role": "assistant",
                     **response
@@ -234,4 +239,7 @@ def main():
     )
 
 if __name__ == "__main__":
-    main()
+    nest_asyncio.apply()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(main())
