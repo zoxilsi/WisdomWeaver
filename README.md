@@ -4,7 +4,8 @@ A real-time, AI-powered chatbot that provides **mental health support and spirit
 
 ---
 
-## 📽️ Demo
+## 📽️ Demo :
+https://bkins-wisdomweaver.streamlit.app/
  <img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/9ab2ad92-9c96-4230-9aec-b8ad881253c0" />
 
 > 🙏 Ask any question like: *"Mujhe anxiety ho rahi hai, kya karun?"*  
