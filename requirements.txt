@@ -3,3 +3,4 @@ requests
 google-generativeai
 asyncio
 streamlit
+python-dotenv
