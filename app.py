@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Constants
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyD9dCtdVew5YPzERL7yUUPwp-fmkVH7nfg")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_API_KEY")
 GITA_CSV_PATH = "bhagavad_gita_verses.csv"
 IMAGE_PATH = "WhatsApp Image 2024-11-18 at 11.40.34_076eab8e.jpg"
 
