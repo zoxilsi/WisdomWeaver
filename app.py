@@ -10,6 +10,9 @@ from PIL import Image
 import time
 from datetime import datetime
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Constants
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_API_KEY_HERE")
