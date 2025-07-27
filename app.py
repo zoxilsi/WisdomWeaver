@@ -39,7 +39,8 @@ def initialize_session_state():
         'language_preference': 'English',
         'webcam_enabled': False,
         'emotion_detector': None,
-        'emotion_log': deque(maxlen=300)
+        'emotion_log': deque(maxlen=300),
+        'last_detected_emotion': None
     }
     
     for key, default_value in default_states.items():
@@ -347,6 +348,15 @@ class GitaGeminiBot:
 
 def render_additional_options():
     """Render additional options below the image, including webcam with emotion detection."""
+    
+    # --- NEW: keep UI in-sync with webcam ---
+    if st.session_state.get("webcam_enabled"):
+        detected = dominant_emotion()
+        if detected and detected != st.session_state.get("last_detected_emotion"):
+            st.session_state.emotional_state = detected
+            st.session_state.last_detected_emotion = detected
+    # ----------------------------------------
+    
     st.markdown("### 🎯 Personalize Your Spiritual Journey")
     
     # Create columns for better layout - now 4 columns instead of 3
