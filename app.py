@@ -80,7 +80,7 @@ class EmotionTransformer(VideoTransformerBase):
             print(f"Error initializing emotion detector: {e}")
             self.detector = None
     
-    def transform(self, frame):
+    def recv(self, frame):
         """Process each frame for emotion detection."""
         try:
             # Convert frame to numpy array
@@ -114,11 +114,24 @@ class EmotionTransformer(VideoTransformerBase):
                     # Draw results on frame
                     self.detector.draw_advanced_results(img, faces)
             
-            return img
+            # Try different VideoFrame import approaches
+            try:
+                from streamlit_webrtc.models import VideoFrame
+                return VideoFrame.from_ndarray(img, format="bgr24")
+            except ImportError:
+                try:
+                    import av
+                    # Create VideoFrame using av library
+                    av_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
+                    return av_frame
+                except ImportError:
+                    # Fallback: return the original frame
+                    return frame
             
         except Exception as e:
             print(f"Error in emotion detection: {e}")
-            return frame.to_ndarray(format="bgr24")
+            # Return original frame on error
+            return frame
 
 class GitaGeminiBot:
     def __init__(self, api_key: str):
@@ -386,14 +399,27 @@ def render_additional_options():
         
         st.info("🎥 Webcam with emotion detection is now active. You can continue chatting while the camera runs!")
         
-        # Start WebRTC streamer with emotion detection
-        webrtc_streamer(
-            key="gita_webcam",
-            video_transformer_factory=EmotionTransformer,
-            rtc_configuration=rtc_configuration,
-            media_stream_constraints={"video": {"width": 640, "height": 480}, "audio": False},
-            async_processing=True
-        )
+        # Create a smaller container for the webcam feed
+        webcam_container = st.container()
+        with webcam_container:
+            # Use columns to control the width - making it smaller
+            cam_col1, cam_col2, cam_col3 = st.columns([1, 2, 1])
+            with cam_col2:
+                # Start WebRTC streamer with emotion detection and higher resolution
+                webrtc_streamer(
+                    key="gita_webcam",
+                    video_transformer_factory=EmotionTransformer,
+                    rtc_configuration=rtc_configuration,
+                    media_stream_constraints={
+                        "video": {
+                            "width": {"ideal": 1280, "min": 640, "max": 1920},
+                            "height": {"ideal": 720, "min": 480, "max": 1080},
+                            "frameRate": {"ideal": 30, "min": 15, "max": 60}
+                        }, 
+                        "audio": False
+                    },
+                    async_processing=True
+                )
     
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
@@ -650,6 +676,18 @@ def main():
                     # Show keywords if available
                     if message.get('keywords'):
                         st.markdown("**Key Concepts:** " + " • ".join([f"`{kw}`" for kw in message['keywords']]))
+                    
+                    # Show context values that were passed to LLM
+                    context_parts = []
+                    if message.get('theme'):
+                        context_parts.append(f"🎯 {message['theme']}")
+                    if message.get('mood'):
+                        context_parts.append(f"🎭 {message['mood']}")
+                    if message.get('emotional_state'):
+                        context_parts.append(f"💭 {message['emotional_state']}")
+                    
+                    if context_parts:
+                        st.markdown("**Response Context:** " + " • ".join(context_parts))
 
         # Add the download button after the chat messages
         if st.session_state.messages:
