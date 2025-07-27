@@ -11,6 +11,8 @@ import time
 from datetime import datetime
 import re
 from dotenv import load_dotenv
+import cv2
+import numpy as np
 
 load_dotenv()
 
@@ -29,7 +31,10 @@ def initialize_session_state():
         'favorite_verses': [],
         'current_mood': 'Seeking Wisdom',
         'emotional_state': 'Balanced',
-        'language_preference': 'English'
+        'language_preference': 'English',
+        'webcam_enabled': False,
+        'meditation_start_time': None,
+        'capture_moment': False
     }
     
     for key, default_value in default_states.items():
@@ -291,6 +296,69 @@ def render_additional_options():
             key="emotional_state",
             help="Your current emotional state for personalized guidance"
         )
+
+    # Webcam Section
+    st.markdown("### 📹 Spiritual Presence")
+    
+    # Toggle for webcam
+    webcam_col1, webcam_col2 = st.columns([1, 3])
+    
+    with webcam_col1:
+        webcam_enabled = st.checkbox(
+            "Enable Webcam",
+            key="webcam_enabled",
+            help="Enable webcam for mindful presence during your spiritual journey"
+        )
+    
+    # Webcam feed display
+    if webcam_enabled:
+        webcam_placeholder = st.empty()
+        
+        # Create a container for webcam controls
+        webcam_controls = st.container()
+        with webcam_controls:
+            control_col1, control_col2, control_col3 = st.columns(3)
+            
+            with control_col2:
+                # Handle meditation timer - removed timer functionality
+                pass
+            
+            with control_col3:
+                # Display rotating inspirational quotes (filtered)
+                inspirational_quotes = [
+                    "🌟 *Be present in this moment*",
+                    "🕉️ *You are the eternal soul experiencing this life*",
+                    "🙏 *In stillness, wisdom speaks*",
+                    "💫 *Your true self is beyond all emotions*",
+                    "🌸 *This moment is a gift from the Divine*",
+                    "✨ *You are exactly where you need to be*"
+                ]
+                
+                # Rotate quotes based on current time
+                quote_index = int(time.time() / 10) % len(inspirational_quotes)
+                st.write(inspirational_quotes[quote_index])
+        
+        # Display webcam feed
+        try:
+            # Use Streamlit's camera_input for webcam
+            camera_image = st.camera_input(
+                "📷 Webcam Feed - Center yourself in your spiritual practice",
+                key="webcam_feed",
+                help="Use this webcam feed to maintain mindful presence"
+            )
+            
+            if camera_image is not None:
+                # Display the captured image in a smaller size
+                col_cam1, col_cam2, col_cam3 = st.columns([1, 2, 1])
+                with col_cam2:
+                    st.image(camera_image, caption="Your moment of reflection", width=300)
+                    
+                    # Add inspirational message
+                    st.markdown("*🙏 In this moment of presence, you connect with the eternal wisdom within*")
+                    
+        except Exception as e:
+            st.error(f"Webcam access error: {str(e)}")
+            st.info("💡 If webcam access is denied, please check your browser permissions")
 
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
