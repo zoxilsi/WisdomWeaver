@@ -280,16 +280,28 @@ def render_additional_options():
         )
 
     if st.session_state.webcam_enabled:
-        detector = st.session_state.emotion_detector
-        # Initialize video capture if not already
-        if st.session_state.video_capture is None:
-            st.session_state.video_capture = cv2.VideoCapture(0)
-            st.session_state.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            st.session_state.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            st.session_state.video_capture.set(cv2.CAP_PROP_FPS, 30)
+        # Show initialization message
+        with st.spinner("🎥 Initializing webcam and emotion detection model... Please wait (this may take up to a minute)"):
+            detector = st.session_state.emotion_detector
+            # Initialize video capture if not already or if it's not opened
+            if st.session_state.video_capture is None or not st.session_state.video_capture.isOpened():
+                # Release any existing capture first
+                if st.session_state.video_capture is not None:
+                    st.session_state.video_capture.release()
+                
+                st.session_state.video_capture = cv2.VideoCapture(0)
+                st.session_state.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                st.session_state.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                st.session_state.video_capture.set(cv2.CAP_PROP_FPS, 30)
+                
+                # Give user feedback about initialization
+                time.sleep(0.5)  # Brief pause to show the spinner
 
         cap = st.session_state.video_capture
         frame_placeholder = st.empty()
+        
+        # Show ready message
+        st.success("✅ Webcam and emotion detection ready!")
 
         try:
             while st.session_state.webcam_enabled:
@@ -314,14 +326,20 @@ def render_additional_options():
                     detector.draw_advanced_results(frame, faces)
                 # Convert to RGB for display
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                # Use use_container_width instead of deprecated use_column_width
-                frame_placeholder.image(frame_rgb, use_container_width=True)
+                # Display with 50% width - using width parameter instead of use_container_width
+                frame_placeholder.image(frame_rgb, width=450)
                 time.sleep(0.03)
         except Exception as e:
             st.error(f"Webcam error: {e}")
         finally:
-            cap.release()
+            if cap is not None:
+                cap.release()
             detector.cleanup()
+    else:
+        # When webcam is disabled, make sure to release the video capture
+        if st.session_state.video_capture is not None:
+            st.session_state.video_capture.release()
+            st.session_state.video_capture = None
     
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
