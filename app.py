@@ -28,6 +28,7 @@ def initialize_session_state():
         'question_history': [],
         'favorite_verses': [],
         'current_mood': 'Seeking Wisdom',
+        'emotional_state': 'Balanced',
         'language_preference': 'English'
     }
     
@@ -180,8 +181,8 @@ class GitaGeminiBot:
         found_keywords = [keyword for keyword in common_gita_keywords if keyword in text_lower]
         return found_keywords[:5]  # Return top 5 relevant keywords
 
-    async def get_response(self, question: str, theme: str = None, mood: str = None) -> Dict:
-        """Enhanced response generation with theme and mood context."""
+    async def get_response(self, question: str, theme: str = None, mood: str = None, emotional_state: str = None) -> Dict:
+        """Enhanced response generation with theme, mood, and emotional state context."""
         try:
             # Build context-aware prompt
             theme_context = ""
@@ -192,18 +193,22 @@ class GitaGeminiBot:
             if mood:
                 mood_context = f"The user is currently {mood.lower()}. "
 
+            emotional_context = ""
+            if emotional_state:
+                emotional_context = f"The user's emotional state is {emotional_state.lower()}. Please provide guidance that acknowledges and addresses this emotional state. "
+
             prompt = f"""
-            {theme_context}{mood_context}Based on the Bhagavad Gita's teachings, provide guidance for this question:
+            {theme_context}{mood_context}{emotional_context}Based on the Bhagavad Gita's teachings, provide guidance for this question:
             {question}
 
             Please format your response exactly like this:
             Chapter X, Verse Y
             Sanskrit: [Sanskrit verse if available]
             Translation: [Clear English translation]
-            Explanation: [Detailed explanation of the verse's meaning and context]
-            Application: [Practical guidance for applying this wisdom in modern life]
+            Explanation: [Detailed explanation of the verse's meaning and context, considering the user's emotional state]
+            Application: [Practical guidance for applying this wisdom in modern life, tailored to the user's current emotional state]
 
-            Make the response comprehensive but accessible to modern readers.
+            Make the response comprehensive but accessible to modern readers, with special attention to providing comfort and guidance appropriate for someone who is {emotional_state.lower() if emotional_state else 'seeking wisdom'}.
             """
 
             # Add retry logic for API calls
@@ -227,6 +232,7 @@ class GitaGeminiBot:
             formatted_response["timestamp"] = datetime.now().isoformat()
             formatted_response["theme"] = theme
             formatted_response["mood"] = mood
+            formatted_response["emotional_state"] = emotional_state
             
             return formatted_response
 
@@ -241,15 +247,16 @@ class GitaGeminiBot:
                 "keywords": ["patience", "perseverance"],
                 "timestamp": datetime.now().isoformat(),
                 "theme": theme,
-                "mood": mood
+                "mood": mood,
+                "emotional_state": emotional_state
             }
 
 def render_additional_options():
     """Render additional options below the image."""
     st.markdown("### 🎯 Personalize Your Spiritual Journey")
     
-    # Create columns for better layout
-    col1, col2, col3 = st.columns(3)
+    # Create columns for better layout - now 4 columns instead of 3
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.selectbox(
@@ -274,6 +281,15 @@ def render_additional_options():
             ["Detailed", "Concise", "Contemplative", "Practical"],
             key="response_style",
             help="How would you like the wisdom to be presented?"
+        )
+    
+    with col4:
+        st.selectbox(
+            "💭 Emotional State",
+            ["Balanced", "Anxious", "Sad", "Angry", "Joyful", "Fearful", 
+             "Overwhelmed", "Lonely", "Excited", "Doubtful", "Hopeful", "Stressed"],
+            key="emotional_state",
+            help="Your current emotional state for personalized guidance"
         )
 
     # Quick action buttons
@@ -449,7 +465,8 @@ def main():
             response = asyncio.run(st.session_state.bot.get_response(
                 st.session_state.auto_question, 
                 st.session_state.selected_theme,
-                st.session_state.current_mood
+                st.session_state.current_mood,
+                st.session_state.emotional_state
             ))
             st.session_state.messages.append({
                 "role": "assistant",
@@ -470,7 +487,8 @@ def main():
                 response = asyncio.run(st.session_state.bot.get_response(
                     auto_question, 
                     st.session_state.selected_theme,
-                    st.session_state.current_mood
+                    st.session_state.current_mood,
+                    st.session_state.emotional_state
                 ))
                 st.session_state.messages.append({
                     "role": "assistant",
@@ -542,7 +560,8 @@ def main():
                 response = asyncio.run(st.session_state.bot.get_response(
                     question,
                     st.session_state.selected_theme,
-                    st.session_state.current_mood
+                    st.session_state.current_mood,
+                    st.session_state.emotional_state
                 ))
                 st.session_state.messages.append({
                     "role": "assistant",
