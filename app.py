@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import cv2
 import numpy as np
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
+from collections import Counter, deque
 
 # Import the advanced emotion detector
 from emotion_advanced import AdvancedEmotionDetector
@@ -37,7 +38,8 @@ def initialize_session_state():
         'emotional_state': 'Neutral',
         'language_preference': 'English',
         'webcam_enabled': False,
-        'emotion_detector': None
+        'emotion_detector': None,
+        'emotion_log': deque(maxlen=300)
     }
     
     for key, default_value in default_states.items():
@@ -56,29 +58,30 @@ def initialize_session_state():
         st.session_state.emotion_detector = AdvancedEmotionDetector()
 
 
+def dominant_emotion(window_sec: int = 5) -> str:
+    """
+    Return the emotion that occurred most often in the last <window_sec> seconds
+    on the webcam feed.  Falls back to the sidebar selection when nothing found.
+    """
+    ctx = st.session_state.get("webrtc_ctx")
+    if ctx and ctx.state.playing and ctx.video_processor:
+        cutoff = time.time() - window_sec
+        recent = [e for ts, e in ctx.video_processor.emotion_history if ts >= cutoff]
+        if recent:
+            dom = Counter(recent).most_common(1)[0][0]
+            # Don't modify session state - just return the detected emotion
+            return dom
+    return st.session_state.emotional_state
+
+
 class EmotionTransformer(VideoTransformerBase):
     """WebRTC video transformer for emotion detection."""
     
     def __init__(self):
-        self.detector = None
-        self._initialize_detector()
-    
-    def _initialize_detector(self):
-        """Initialize the emotion detector safely."""
-        try:
-            # Ensure session state is initialized
-            if hasattr(st.session_state, 'emotion_detector') and st.session_state.emotion_detector is not None:
-                self.detector = st.session_state.emotion_detector
-            else:
-                # Initialize detector if not available
-                from emotion_advanced import AdvancedEmotionDetector
-                self.detector = AdvancedEmotionDetector()
-                # Store in session state for future use
-                if 'emotion_detector' not in st.session_state:
-                    st.session_state.emotion_detector = self.detector
-        except Exception as e:
-            print(f"Error initializing emotion detector: {e}")
-            self.detector = None
+        # One detector per peer‑connection
+        self.detector = AdvancedEmotionDetector()
+        # Ring‑buffer of (timestamp, emotion) tuples – 5 s at 30 fps ≈ 150
+        self.emotion_history: deque = deque(maxlen=150)
     
     def recv(self, frame):
         """Process each frame for emotion detection."""
@@ -88,10 +91,6 @@ class EmotionTransformer(VideoTransformerBase):
             
             # Flip frame horizontally for mirror effect
             img = cv2.flip(img, 1)
-            
-            # Initialize detector if not available
-            if self.detector is None:
-                self._initialize_detector()
             
             # Only proceed if detector is available
             if self.detector is not None:
@@ -110,6 +109,11 @@ class EmotionTransformer(VideoTransformerBase):
                     
                     if face_roi.size > 0:
                         self.detector.update_emotion_async(face_roi)
+                        # Save latest emotion for the GUI thread
+                        if hasattr(self.detector, "current_emotion") and self.detector.current_emotion:
+                            self.emotion_history.append(
+                                (time.time(), self.detector.current_emotion)
+                            )
                     
                     # Draw results on frame
                     self.detector.draw_advanced_results(img, faces)
@@ -406,7 +410,7 @@ def render_additional_options():
             cam_col1, cam_col2, cam_col3 = st.columns([1, 2, 1])
             with cam_col2:
                 # Start WebRTC streamer with emotion detection and higher resolution
-                webrtc_streamer(
+                ctx = webrtc_streamer(
                     key="gita_webcam",
                     video_transformer_factory=EmotionTransformer,
                     rtc_configuration=rtc_configuration,
@@ -420,6 +424,9 @@ def render_additional_options():
                     },
                     async_processing=True
                 )
+                # Expose ctx so the main thread can read the emotion history
+                if ctx:
+                    st.session_state["webrtc_ctx"] = ctx
     
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
@@ -602,7 +609,7 @@ def main():
                 st.session_state.auto_question, 
                 st.session_state.selected_theme,
                 st.session_state.current_mood,
-                st.session_state.emotional_state
+                dominant_emotion()
             ))
             st.session_state.messages.append({
                 "role": "assistant",
@@ -624,7 +631,7 @@ def main():
                     auto_question, 
                     st.session_state.selected_theme,
                     st.session_state.current_mood,
-                    st.session_state.emotional_state
+                    dominant_emotion()
                 ))
                 st.session_state.messages.append({
                     "role": "assistant",
@@ -709,7 +716,7 @@ def main():
                     question,
                     st.session_state.selected_theme,
                     st.session_state.current_mood,
-                    st.session_state.emotional_state
+                    dominant_emotion()
                 ))
                 st.session_state.messages.append({
                     "role": "assistant",
