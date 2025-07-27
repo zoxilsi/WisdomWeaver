@@ -3,6 +3,9 @@ requests
 google-generativeai
 asyncio
 streamlit
+streamlit-webrtc
 python-dotenv
 pillow
 datetime
+opencv-python
+numpy

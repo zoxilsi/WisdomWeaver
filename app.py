@@ -13,6 +13,7 @@ import re
 from dotenv import load_dotenv
 import cv2
 import numpy as np
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
 
 # Import the advanced emotion detector
 from emotion_advanced import AdvancedEmotionDetector
@@ -33,11 +34,10 @@ def initialize_session_state():
         'question_history': [],
         'favorite_verses': [],
         'current_mood': 'Seeking Wisdom',
-        'emotional_state': 'Balanced',
+        'emotional_state': 'Neutral',
         'language_preference': 'English',
         'webcam_enabled': False,
-        'emotion_detector': None,
-        'video_capture': None
+        'emotion_detector': None
     }
     
     for key, default_value in default_states.items():
@@ -54,6 +54,71 @@ def initialize_session_state():
     # Initialize emotion detector once
     if st.session_state.emotion_detector is None:
         st.session_state.emotion_detector = AdvancedEmotionDetector()
+
+
+class EmotionTransformer(VideoTransformerBase):
+    """WebRTC video transformer for emotion detection."""
+    
+    def __init__(self):
+        self.detector = None
+        self._initialize_detector()
+    
+    def _initialize_detector(self):
+        """Initialize the emotion detector safely."""
+        try:
+            # Ensure session state is initialized
+            if hasattr(st.session_state, 'emotion_detector') and st.session_state.emotion_detector is not None:
+                self.detector = st.session_state.emotion_detector
+            else:
+                # Initialize detector if not available
+                from emotion_advanced import AdvancedEmotionDetector
+                self.detector = AdvancedEmotionDetector()
+                # Store in session state for future use
+                if 'emotion_detector' not in st.session_state:
+                    st.session_state.emotion_detector = self.detector
+        except Exception as e:
+            print(f"Error initializing emotion detector: {e}")
+            self.detector = None
+    
+    def transform(self, frame):
+        """Process each frame for emotion detection."""
+        try:
+            # Convert frame to numpy array
+            img = frame.to_ndarray(format="bgr24")
+            
+            # Flip frame horizontally for mirror effect
+            img = cv2.flip(img, 1)
+            
+            # Initialize detector if not available
+            if self.detector is None:
+                self._initialize_detector()
+            
+            # Only proceed if detector is available
+            if self.detector is not None:
+                # Detect faces
+                faces = self.detector.detect_faces_optimized(img)
+                
+                if len(faces) > 0:
+                    # Process only the best face
+                    x, y, w, h = faces[0]
+                    padding = 30
+                    y1 = max(0, y - padding)
+                    y2 = min(img.shape[0], y + h + padding)
+                    x1 = max(0, x - padding)
+                    x2 = min(img.shape[1], x + w + padding)
+                    face_roi = img[y1:y2, x1:x2]
+                    
+                    if face_roi.size > 0:
+                        self.detector.update_emotion_async(face_roi)
+                    
+                    # Draw results on frame
+                    self.detector.draw_advanced_results(img, faces)
+            
+            return img
+            
+        except Exception as e:
+            print(f"Error in emotion detection: {e}")
+            return frame.to_ndarray(format="bgr24")
 
 class GitaGeminiBot:
     def __init__(self, api_key: str):
@@ -298,8 +363,7 @@ def render_additional_options():
     with col4:
         st.selectbox(
             "💭 Emotional State",
-            ["Balanced", "Anxious", "Sad", "Angry", "Joyful", "Fearful", 
-             "Overwhelmed", "Lonely", "Excited", "Doubtful", "Hopeful", "Stressed"],
+            ["Neutral", "Happy", "Sad", "Angry", "Fear", "Surprise", "Disgust"],
             key="emotional_state",
             help="Your current emotional state for personalized guidance"
         )
@@ -308,73 +372,28 @@ def render_additional_options():
     st.markdown("### 📹 Spiritual Presence & Emotion Detection")
     webcam_col1, webcam_col2 = st.columns([1, 3])
     with webcam_col1:
-        st.checkbox(
+        webcam_enabled = st.checkbox(
             "Enable Webcam with Emotion Detection",
             key="webcam_enabled",
             help="Enable webcam and emotion detection for mindful presence"
         )
 
-    if st.session_state.webcam_enabled:
-        # Show initialization message
-        with st.spinner("🎥 Initializing webcam and emotion detection model... Please wait (this may take up to a minute)"):
-            detector = st.session_state.emotion_detector
-            # Initialize video capture if not already or if it's not opened
-            if st.session_state.video_capture is None or not st.session_state.video_capture.isOpened():
-                # Release any existing capture first
-                if st.session_state.video_capture is not None:
-                    st.session_state.video_capture.release()
-                
-                st.session_state.video_capture = cv2.VideoCapture(0)
-                st.session_state.video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                st.session_state.video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-                st.session_state.video_capture.set(cv2.CAP_PROP_FPS, 30)
-                
-                # Give user feedback about initialization
-                time.sleep(0.5)  # Brief pause to show the spinner
-
-        cap = st.session_state.video_capture
-        frame_placeholder = st.empty()
+    if webcam_enabled:
+        # WebRTC Configuration for better connectivity
+        rtc_configuration = RTCConfiguration({
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+        })
         
-        # Show ready message
-        st.success("✅ Webcam and emotion detection ready!")
-
-        try:
-            while st.session_state.webcam_enabled:
-                ret, frame = cap.read()
-                if not ret:
-                    st.error("Failed to grab frame from webcam.")
-                    break
-                frame = cv2.flip(frame, 1)
-                # Detect faces
-                faces = detector.detect_faces_optimized(frame)
-                if len(faces) > 0:
-                    # Process only the best face
-                    x, y, w, h = faces[0]
-                    padding = 30
-                    y1 = max(0, y - padding)
-                    y2 = min(frame.shape[0], y + h + padding)
-                    x1 = max(0, x - padding)
-                    x2 = min(frame.shape[1], x + w + padding)
-                    face_roi = frame[y1:y2, x1:x2]
-                    if face_roi.size > 0:
-                        detector.update_emotion_async(face_roi)
-                    detector.draw_advanced_results(frame, faces)
-                # Convert to RGB for display
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                # Display with 50% width - using width parameter instead of use_container_width
-                frame_placeholder.image(frame_rgb, width=450)
-                time.sleep(0.03)
-        except Exception as e:
-            st.error(f"Webcam error: {e}")
-        finally:
-            if cap is not None:
-                cap.release()
-            detector.cleanup()
-    else:
-        # When webcam is disabled, make sure to release the video capture
-        if st.session_state.video_capture is not None:
-            st.session_state.video_capture.release()
-            st.session_state.video_capture = None
+        st.info("🎥 Webcam with emotion detection is now active. You can continue chatting while the camera runs!")
+        
+        # Start WebRTC streamer with emotion detection
+        webrtc_streamer(
+            key="gita_webcam",
+            video_transformer_factory=EmotionTransformer,
+            rtc_configuration=rtc_configuration,
+            media_stream_constraints={"video": {"width": 640, "height": 480}, "audio": False},
+            async_processing=True
+        )
     
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
@@ -528,6 +547,7 @@ def main():
         initial_sidebar_state="expanded"
     )
 
+    # Initialize session state first, before any other operations
     initialize_session_state()
 
     # Load and display image with reduced width
@@ -547,8 +567,6 @@ def main():
             st.error(f"Error loading image: {str(e)}")
     else:
         st.warning("Image file not found. Please ensure the image is in the correct location.")
-
-    initialize_session_state()
 
     # Check for auto question from sidebar verse buttons
     if hasattr(st.session_state, 'auto_question'):
