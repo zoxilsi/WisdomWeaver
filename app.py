@@ -267,7 +267,42 @@ def render_additional_options():
     """Render additional options below the image, including webcam with emotion detection."""
     st.markdown("### 🎯 Personalize Your Spiritual Journey")
     
-    # ... [other select boxes unchanged] ...
+    # Create columns for better layout - now 4 columns instead of 3
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.selectbox(
+            "🎭 Current Mood",
+            ["Seeking Wisdom", "Feeling Confused", "Need Motivation", "Seeking Peace", 
+             "Facing Challenges", "Grateful", "Contemplative"],
+            key="current_mood",
+            help="Your current state of mind helps tailor the guidance"
+        )
+    
+    with col2:
+        st.selectbox(
+            "📚 Focus Theme",
+            list(st.session_state.bot.themes.keys()),
+            key="selected_theme",
+            help="Choose the area where you seek guidance"
+        )
+    
+    with col3:
+        st.selectbox(
+            "🌐 Response Style",
+            ["Detailed", "Concise", "Contemplative", "Practical"],
+            key="response_style",
+            help="How would you like the wisdom to be presented?"
+        )
+    
+    with col4:
+        st.selectbox(
+            "💭 Emotional State",
+            ["Balanced", "Anxious", "Sad", "Angry", "Joyful", "Fearful", 
+             "Overwhelmed", "Lonely", "Excited", "Doubtful", "Hopeful", "Stressed"],
+            key="emotional_state",
+            help="Your current emotional state for personalized guidance"
+        )
 
     # Webcam Section
     st.markdown("### 📹 Spiritual Presence & Emotion Detection")
@@ -343,7 +378,24 @@ def render_additional_options():
     
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
-    # ... [unchanged quick actions] ...
+    
+    action_col1, action_col2, action_col3, action_col4 = st.columns(4)
+    
+    with action_col1:
+        if st.button("🎲 Random Verse", help="Get a random verse for inspiration"):
+            return "random_verse"
+    
+    with action_col2:
+        if st.button("💭 Daily Reflection", help="Get guidance for daily contemplation"):
+            return "daily_reflection"
+    
+    with action_col3:
+        if st.button("🔍 Verse Search", help="Search for specific verses"):
+            return "verse_search"
+    
+    with action_col4:
+        if st.button("📖 Chapter Summary", help="Get a summary of any chapter"):
+            return "chapter_summary"
 
     return None
 
