@@ -385,6 +385,32 @@ def render_enhanced_sidebar():
     else:
         st.sidebar.info("No favorites saved yet")
 
+def create_downloadable_content(chat_history: List[Dict]) -> str:
+    """Formats the chat history into a readable string for download."""
+    content = f"--- Wisdom Weaver Chat History - {datetime.now().strftime('%Y-%m-%d %H:%M')} ---\n\n"
+    for message in chat_history:
+        role = message["role"]
+        
+        if role == "user":
+            content += f"User: {message['content']}\n\n"
+        else:
+            # Handle the structured AI response
+            content += f"Wisdom Weaver: "
+            if message.get("verse_reference"):
+                content += f"📖 {message['verse_reference']}\n"
+            if message.get("sanskrit"):
+                content += f"Sanskrit: {message['sanskrit']}\n"
+            if message.get("translation"):
+                content += f"Translation: {message['translation']}\n"
+            if message.get("explanation"):
+                content += f"Explanation: {message['explanation']}\n"
+            if message.get("application"):
+                content += f"Modern Application: {message['application']}\n"
+            content += "\n"
+            
+    content += "--- End of Chat History ---"
+    return content
+
 def main():
     """Enhanced main Streamlit application."""
     st.set_page_config(
@@ -496,6 +522,17 @@ def main():
                     # Show keywords if available
                     if message.get('keywords'):
                         st.markdown("**Key Concepts:** " + " • ".join([f"`{kw}`" for kw in message['keywords']]))
+
+        # Add the download button after the chat messages
+        if st.session_state.messages:
+            chat_content = create_downloadable_content(st.session_state.messages)
+            st.download_button(
+                label="📥 Download Chat History",
+                data=chat_content,
+                file_name=f"WisdomWeaver_Chat_History_{datetime.now().strftime('%Y-%m-%d')}.txt",
+                mime="text/plain",
+                help="Download your entire chat conversation as a text file"
+            )
 
         # Enhanced chat input
         if question := st.chat_input("Ask your question here..."):
