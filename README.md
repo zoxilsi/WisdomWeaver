@@ -52,28 +52,73 @@ https://bkins-wisdomweaver.streamlit.app/
 ### 📦 Prerequisites
 
 - Python 3.9 or higher
-- Google Gemini API ([Get one here]( https://aistudio.google.com/app/apikey)
+- pip (Python package installer)
+- Google Gemini API Key ([Get one here](https://aistudio.google.com/app/apikey))
 
 ### 🚀 Installation
 
-
-# Clone the repository
+1. **Clone the repository**
+```bash
 git clone https://github.com/satvik091/WisdomWeaver.git
-cd gita-gemini-bot
+cd WisdomWeaver
+```
 
-# Install required Python packages
+2. **Create a virtual environment (recommended)**
+```bash
+# On Windows
+python -m venv venv
+venv\Scripts\activate
+
+# On macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. **Install required Python packages**
+```bash
 pip install -r requirements.txt
-🔑 API Key Configuration
-1. Create a `.env` file in the root directory:
+```
 
+### 🔑 API Key Configuration
+1. Create a `.env` file in the root directory:
 ```env
 GOOGLE_API_KEY=your_api_key_here
+```
 
-▶️ Run the Application
-bash
-Copy
-Edit
-streamlit run main.py
+### ▶️ Run the Application
+
+1. **Make sure your virtual environment is activated**
+```bash
+# On Windows
+venv\Scripts\activate
+
+# On macOS/Linux
+source venv/bin/activate
+```
+
+2. **Run the Streamlit app**
+```bash
+streamlit run app.py
+```
+
+3. **Open your browser** and go to `http://localhost:8501`
+
+### 🔧 Troubleshooting
+
+**Issue: Module not found errors**
+- Make sure your virtual environment is activated
+- Run `pip install -r requirements.txt` again
+
+**Issue: API key not working**
+- Verify your API key in the `.env` file
+- Make sure the `.env` file is in the root directory
+- Check that your Google AI API key is valid
+
+**Issue: Streamlit not starting**
+- Make sure you're in the correct directory
+- Try running `streamlit --version` to verify installation
+
+---
 
 
 📂 Folder Structure

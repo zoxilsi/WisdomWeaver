@@ -12,6 +12,13 @@ import time
 from datetime import datetime
 import re
 from dotenv import load_dotenv
+import cv2
+import numpy as np
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, RTCConfiguration
+from collections import Counter, deque
+
+# Import the advanced emotion detector
+from emotion_advanced import AdvancedEmotionDetector
 
 load_dotenv()
 
@@ -29,7 +36,12 @@ def initialize_session_state():
         'question_history': [],
         'favorite_verses': [],
         'current_mood': 'Seeking Wisdom',
-        'language_preference': 'English'
+        'emotional_state': 'Neutral',
+        'language_preference': 'English',
+        'webcam_enabled': False,
+        'emotion_detector': None,
+        'emotion_log': deque(maxlen=300),
+        'last_detected_emotion': None
     }
     
     for key, default_value in default_states.items():
@@ -42,6 +54,90 @@ def initialize_session_state():
             st.error("Please set the GEMINI_API_KEY in your configuration.")
             st.stop()
         st.session_state.bot = GitaGeminiBot(GEMINI_API_KEY)
+
+    # Initialize emotion detector once
+    if st.session_state.emotion_detector is None:
+        st.session_state.emotion_detector = AdvancedEmotionDetector()
+
+
+def dominant_emotion(window_sec: int = 5) -> str:
+    """
+    Return the emotion that occurred most often in the last <window_sec> seconds
+    on the webcam feed.  Falls back to the sidebar selection when nothing found.
+    """
+    ctx = st.session_state.get("webrtc_ctx")
+    if ctx and ctx.state.playing and ctx.video_processor:
+        cutoff = time.time() - window_sec
+        recent = [e for ts, e in ctx.video_processor.emotion_history if ts >= cutoff]
+        if recent:
+            dom = Counter(recent).most_common(1)[0][0]
+            # Don't modify session state - just return the detected emotion
+            return dom
+    return st.session_state.emotional_state
+
+
+class EmotionTransformer(VideoTransformerBase):
+    """WebRTC video transformer for emotion detection."""
+    
+    def __init__(self):
+        # One detector per peer‑connection
+        self.detector = AdvancedEmotionDetector()
+        # Ring‑buffer of (timestamp, emotion) tuples – 5 s at 30 fps ≈ 150
+        self.emotion_history: deque = deque(maxlen=150)
+    
+    def recv(self, frame):
+        """Process each frame for emotion detection."""
+        try:
+            # Convert frame to numpy array
+            img = frame.to_ndarray(format="bgr24")
+            
+            # Flip frame horizontally for mirror effect
+            img = cv2.flip(img, 1)
+            
+            # Only proceed if detector is available
+            if self.detector is not None:
+                # Detect faces
+                faces = self.detector.detect_faces_optimized(img)
+                
+                if len(faces) > 0:
+                    # Process only the best face
+                    x, y, w, h = faces[0]
+                    padding = 30
+                    y1 = max(0, y - padding)
+                    y2 = min(img.shape[0], y + h + padding)
+                    x1 = max(0, x - padding)
+                    x2 = min(img.shape[1], x + w + padding)
+                    face_roi = img[y1:y2, x1:x2]
+                    
+                    if face_roi.size > 0:
+                        self.detector.update_emotion_async(face_roi)
+                        # Save latest emotion for the GUI thread
+                        if hasattr(self.detector, "current_emotion") and self.detector.current_emotion:
+                            self.emotion_history.append(
+                                (time.time(), self.detector.current_emotion)
+                            )
+                    
+                    # Draw results on frame
+                    self.detector.draw_advanced_results(img, faces)
+            
+            # Try different VideoFrame import approaches
+            try:
+                from streamlit_webrtc.models import VideoFrame
+                return VideoFrame.from_ndarray(img, format="bgr24")
+            except ImportError:
+                try:
+                    import av
+                    # Create VideoFrame using av library
+                    av_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
+                    return av_frame
+                except ImportError:
+                    # Fallback: return the original frame
+                    return frame
+            
+        except Exception as e:
+            print(f"Error in emotion detection: {e}")
+            # Return original frame on error
+            return frame
 
 class GitaGeminiBot:
     def __init__(self, api_key: str):
@@ -181,8 +277,8 @@ class GitaGeminiBot:
         found_keywords = [keyword for keyword in common_gita_keywords if keyword in text_lower]
         return found_keywords[:5]  # Return top 5 relevant keywords
 
-    async def get_response(self, question: str, theme: str = None, mood: str = None) -> Dict:
-        """Enhanced response generation with theme and mood context."""
+    async def get_response(self, question: str, theme: str = None, mood: str = None, emotional_state: str = None) -> Dict:
+        """Enhanced response generation with theme, mood, and emotional state context."""
         try:
             # Build context-aware prompt
             theme_context = ""
@@ -193,18 +289,22 @@ class GitaGeminiBot:
             if mood:
                 mood_context = f"The user is currently {mood.lower()}. "
 
+            emotional_context = ""
+            if emotional_state:
+                emotional_context = f"The user's emotional state is {emotional_state.lower()}. Please provide guidance that acknowledges and addresses this emotional state. "
+
             prompt = f"""
-            {theme_context}{mood_context}Based on the Bhagavad Gita's teachings, provide guidance for this question:
+            {theme_context}{mood_context}{emotional_context}Based on the Bhagavad Gita's teachings, provide guidance for this question:
             {question}
 
             Please format your response exactly like this:
             Chapter X, Verse Y
             Sanskrit: [Sanskrit verse if available]
             Translation: [Clear English translation]
-            Explanation: [Detailed explanation of the verse's meaning and context]
-            Application: [Practical guidance for applying this wisdom in modern life]
+            Explanation: [Detailed explanation of the verse's meaning and context, considering the user's emotional state]
+            Application: [Practical guidance for applying this wisdom in modern life, tailored to the user's current emotional state]
 
-            Make the response comprehensive but accessible to modern readers.
+            Make the response comprehensive but accessible to modern readers, with special attention to providing comfort and guidance appropriate for someone who is {emotional_state.lower() if emotional_state else 'seeking wisdom'}.
             """
 
             # Add retry logic for API calls
@@ -228,6 +328,7 @@ class GitaGeminiBot:
             formatted_response["timestamp"] = datetime.now().isoformat()
             formatted_response["theme"] = theme
             formatted_response["mood"] = mood
+            formatted_response["emotional_state"] = emotional_state
             
             return formatted_response
 
@@ -242,15 +343,25 @@ class GitaGeminiBot:
                 "keywords": ["patience", "perseverance"],
                 "timestamp": datetime.now().isoformat(),
                 "theme": theme,
-                "mood": mood
+                "mood": mood,
+                "emotional_state": emotional_state
             }
 
 def render_additional_options():
-    """Render additional options below the image."""
+    """Render additional options below the image, including webcam with emotion detection."""
+    
+    # --- NEW: keep UI in-sync with webcam ---
+    if st.session_state.get("webcam_enabled"):
+        detected = dominant_emotion()
+        if detected and detected != st.session_state.get("last_detected_emotion"):
+            st.session_state.emotional_state = detected
+            st.session_state.last_detected_emotion = detected
+    # ----------------------------------------
+    
     st.markdown("### 🎯 Personalize Your Spiritual Journey")
     
-    # Create columns for better layout
-    col1, col2, col3 = st.columns(3)
+    # Create columns for better layout - now 4 columns instead of 3
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.selectbox(
@@ -276,7 +387,58 @@ def render_additional_options():
             key="response_style",
             help="How would you like the wisdom to be presented?"
         )
+    
+    with col4:
+        st.selectbox(
+            "💭 Emotional State",
+            ["Neutral", "Happy", "Sad", "Angry", "Fear", "Surprise", "Disgust"],
+            key="emotional_state",
+            help="Your current emotional state for personalized guidance"
+        )
 
+    # Webcam Section
+    st.markdown("### 📹 Spiritual Presence & Emotion Detection")
+    webcam_col1, webcam_col2 = st.columns([1, 3])
+    with webcam_col1:
+        webcam_enabled = st.checkbox(
+            "Enable Webcam with Emotion Detection",
+            key="webcam_enabled",
+            help="Enable webcam and emotion detection for mindful presence"
+        )
+
+    if webcam_enabled:
+        # WebRTC Configuration for better connectivity
+        rtc_configuration = RTCConfiguration({
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+        })
+        
+        st.info("🎥 Webcam with emotion detection is now active. You can continue chatting while the camera runs!")
+        
+        # Create a smaller container for the webcam feed
+        webcam_container = st.container()
+        with webcam_container:
+            # Use columns to control the width - making it smaller
+            cam_col1, cam_col2, cam_col3 = st.columns([1, 2, 1])
+            with cam_col2:
+                # Start WebRTC streamer with emotion detection and higher resolution
+                ctx = webrtc_streamer(
+                    key="gita_webcam",
+                    video_transformer_factory=EmotionTransformer,
+                    rtc_configuration=rtc_configuration,
+                    media_stream_constraints={
+                        "video": {
+                            "width": {"ideal": 1280, "min": 640, "max": 1920},
+                            "height": {"ideal": 720, "min": 480, "max": 1080},
+                            "frameRate": {"ideal": 30, "min": 15, "max": 60}
+                        }, 
+                        "audio": False
+                    },
+                    async_processing=True
+                )
+                # Expose ctx so the main thread can read the emotion history
+                if ctx:
+                    st.session_state["webrtc_ctx"] = ctx
+    
     # Quick action buttons
     st.markdown("### ⚡ Quick Actions")
     
@@ -290,6 +452,14 @@ def render_additional_options():
         if st.button("💭 Daily Reflection", help="Get guidance for daily contemplation"):
             return "daily_reflection"
     
+    with action_col3:
+        if st.button("🔍 Verse Search", help="Search for specific verses"):
+            return "verse_search"
+    
+    with action_col4:
+        if st.button("📖 Chapter Summary", help="Get a summary of any chapter"):
+            return "chapter_summary"
+
     return None
 
 def handle_quick_actions(action_type):
@@ -421,6 +591,7 @@ def main():
         initial_sidebar_state="expanded"
     )
 
+    # Initialize session state first, before any other operations
     initialize_session_state()
 
     # Load and display image with reduced width
@@ -441,8 +612,6 @@ def main():
     else:
         st.warning("Image file not found. Please ensure the image is in the correct location.")
 
-    initialize_session_state()
-
     # Check for auto question from sidebar verse buttons
     if hasattr(st.session_state, 'auto_question'):
         st.session_state.messages.append({"role": "user", "content": st.session_state.auto_question})
@@ -450,7 +619,8 @@ def main():
             response = asyncio.run(st.session_state.bot.get_response(
                 st.session_state.auto_question, 
                 st.session_state.selected_theme,
-                st.session_state.current_mood
+                st.session_state.current_mood,
+                dominant_emotion()
             ))
             st.session_state.messages.append({
                 "role": "assistant",
@@ -471,7 +641,8 @@ def main():
                 response = asyncio.run(st.session_state.bot.get_response(
                     auto_question, 
                     st.session_state.selected_theme,
-                    st.session_state.current_mood
+                    st.session_state.current_mood,
+                    dominant_emotion()
                 ))
                 st.session_state.messages.append({
                     "role": "assistant",
@@ -523,6 +694,18 @@ def main():
                     # Show keywords if available
                     if message.get('keywords'):
                         st.markdown("**Key Concepts:** " + " • ".join([f"`{kw}`" for kw in message['keywords']]))
+                    
+                    # Show context values that were passed to LLM
+                    context_parts = []
+                    if message.get('theme'):
+                        context_parts.append(f"🎯 {message['theme']}")
+                    if message.get('mood'):
+                        context_parts.append(f"🎭 {message['mood']}")
+                    if message.get('emotional_state'):
+                        context_parts.append(f"💭 {message['emotional_state']}")
+                    
+                    if context_parts:
+                        st.markdown("**Response Context:** " + " • ".join(context_parts))
 
         # Add the download button after the chat messages
         if st.session_state.messages:
@@ -543,7 +726,8 @@ def main():
                 response = asyncio.run(st.session_state.bot.get_response(
                     question,
                     st.session_state.selected_theme,
-                    st.session_state.current_mood
+                    st.session_state.current_mood,
+                    dominant_emotion()
                 ))
                 st.session_state.messages.append({
                     "role": "assistant",
