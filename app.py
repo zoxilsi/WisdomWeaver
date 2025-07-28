@@ -1,3 +1,4 @@
+
 import requests
 import pandas as pd
 import streamlit as st
@@ -550,23 +551,39 @@ def main():
                 })
                 st.rerun()
 
-    with col2:
-        render_enhanced_sidebar()
+        with col2:
+         render_enhanced_sidebar()
 
-    # Enhanced footer
+    # --- About Us Section ---
     st.markdown("---")
-    st.markdown(
-        """
-        💫 **About This Application**
-        
-        This application uses Google's Gemini AI to provide insights from the Bhagavad Gita. 
-        The wisdom shared here is meant for reflection and guidance. For deeper spiritual 
-        understanding, please consult with qualified spiritual teachers and study the 
-        original texts.
-        
-        *Built with ❤️ for spiritual seekers everywhere*
-        """
-    )
+    with st.expander("💫 About Wisdom Weaver", expanded=True):
+        st.markdown("""
+## About Wisdom Weaver
+
+**Wisdom Weaver** is a thoughtful AI-driven spiritual guide rooted in the timeless wisdom of the *Bhagavad Gita*. Created for modern seekers navigating life’s complexities, this platform offers personalized guidance, daily reflection, and the ability to connect with the deeper meaning behind ancient teachings.
+
+### 🌱 Our Vision
+To bridge ancient spiritual insight with today’s challenges—offering clarity, strength, and inner peace through meaningful interaction.
+
+### 🔍 What We Offer
+- **AI-Powered Insights:** Harnessing Google’s Gemini AI to interpret Gita verses in ways that resonate with your current state of mind.
+- **Verse Exploration:** Access verses across all 18 chapters with translations, transliterations, and simplified meaning.
+- **Theme-Based Guidance:** Whether it’s anxiety, purpose, relationships, or grief—we help you reflect and grow.
+- **Interactive Tools:** Save favorite verses, revisit reflections, or receive a random verse tailored to your need.
+- **Community-Centric Design:** Built by people who believe spirituality is a journey best shared.
+
+### 🌟 Why Bhagavad Gita?
+In every era, humanity has faced the same questions: Who am I? What is my purpose? Why do I suffer? The Gita doesn’t provide fixed answers—it offers a path. A mirror. A gentle but firm invitation to understand the self and act with awareness.
+
+### 🧭 Meet the Team
+- **Satvik gupta & Contributors:** Students of life, seekers of clarity—dedicated to merging tradition with technology.
+- **Spiritual Mentors & Advisors:** Guiding the app’s soul to ensure authenticity and reverence.
+
+
+
+*Wisdom Weaver is more than an app. It’s a living dialogue between past and present—a companion for every soul who believes that wisdom is not something we learn, but something we remember.*
+""")
+
 
 if __name__ == "__main__":
-    main()
+    main() 
