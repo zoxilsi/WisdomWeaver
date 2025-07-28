@@ -119,7 +119,8 @@ GOOGLE_API_KEY=your_api_key_here
 - 🔒 **Never share your API key publicly.**
 - ✅ **Make sure your `.env` file is excluded from version control** (e.g., Git).
 - 📁 **The `.gitignore` file should already contain an entry for `.env`.** Double-check if you're unsure.
-
+```
+---
 
 ### ▶️ Run the Application
 
@@ -161,99 +162,98 @@ If it doesn’t open automatically, simply copy and paste the URL into your brow
 - Try running `streamlit --version` to verify installation
 
 ---
+## 📂 Folder Structure
 
+```plaintext
+gita-gemini-bot/
+├── main.py                  # Streamlit app file
+├── bhagavad_gita_verses.csv # Bhagavad Gita verse data
+├── requirements.txt         # Python dependencies
+├── README.md                # You're here!
+├── .env.example             # Sample environment config
+└── .streamlit/              # Streamlit config folder
+```
 
-📂 Folder Structure
-vbnet
-Copy
-Edit
-📁 gita-gemini-bot/ 
+---
+## 💻 Sample Question
 
- 📄 main.py                   ← Streamlit app file
- 
-  📄 bhagavad_gita_verses.csv ← Gita verse data
- 
-  📄 requirements.txt          ← Python dependencies
- 
-  📄 README.md                 ← You're here!
- 
- 📁 .streamlit/
-      
-💻 Sample Question
+**Q:** *Zindagi ka purpose kya hai?*
 
-css
-Copy
-Edit
+**Output:**
 
-Q: Zindagi ka purpose kya hai?
+- 📖 **Chapter 3, Verse 30**
+- 🕉️ *Mayi sarvani karmani sannyasyadhyatmacetasa...*
 
-Output:
+**Translation:**  
+*Dedicate all actions to me with full awareness of the Self.*
 
-Copy
-Edit
-Chapter 3, Verse 30
+**Explanation:**  
+Lord Krishna advises detachment and devotion in duty.
 
-Sanskrit: Mayi sarvani karmani sannyasyadhyatmacetasa...
+**Application:**  
+Focus on sincere efforts, not selfish rewards.
 
-Translation: Dedicate all actions to me with full awareness of the Self.
+---
+## 🤝 Contributing
 
-Explanation: Lord Krishna advises detachment and devotion in duty.
+We welcome contributions as part of **GirlScript Summer of Code 2025 (GSSoC'25)** and beyond!
 
-Application: Focus on sincere efforts, not selfish rewards.
+### 📌 Steps to Contribute
 
-🤝 Contributing
+1. **Fork** this repo 🍴  
+2. **Create a branch**  
+  ```bash
+   git checkout -b feat/amazing-feature
+  ```
+3. **Make your changes** ✨
+4. **Commit your changes**
+  ```bash
+  git commit -m 'Add: Amazing Feature'
+  ```
+5. **Push to your branch**
+  ```bash
+  git push origin feat/amazing-feature
+  ```
+6. **Open a Pull Request and link the related issue**
+  ```bash
+  Closes #6
+  ```
 
-We welcome contributions as part of GirlScript Summer of Code 2025 (GSSoC'25) and beyond!
+---
+## 🌸 GirlScript Summer of Code 2025
 
-📌 Steps to Contribute
-Fork this repo 🍴
+This project is proudly part of **GSSoC '25**!  
+Thanks to the amazing open-source community, contributors, and mentors for your valuable support.
 
-Create your branch (git checkout -b feat/amazing-feature)
+---
+## 📄 License
 
-Make your changes ✨
+This project is licensed under the **MIT License**.  
+See the [LICENSE](LICENSE) file for full details.
 
-Commit your changes (git commit -m 'Add: Amazing Feature')
+---
 
-Push to your branch (git push origin feat/amazing-feature)
+## 🙏 Acknowledgements
 
-Open a Pull Request and link the issue:
+- 📜 **Bhagavad Gita** – Eternal source of wisdom  
+- 🧠 **Google Gemini API** – AI backend for responses  
+- 🌐 **Streamlit Team** – For the interactive app framework  
+- 👥 **GSSoC 2025 Community** – For mentorship and collaboration  
 
-Copy
-Edit
-Closes #6
+---
 
-📚 Also check: CONTRIBUTING.md (optional file to add)
-
-🌸 GirlScript Summer of Code 2025
-
-This project is proudly part of GSSoC '25!
-Thanks to the amazing open-source community, contributors, and mentors.
-✨ Assigned Issue: #6 - Improve README file for better clarity and engagement
-
-📄 License
-
-This project is under the MIT License.
-See the LICENSE file for details.
-
-🙏 Acknowledgements
-Bhagavad Gita
-
-Google Gemini API
-
-Streamlit Team
-
-GSSoC 2025 Community
-
-
-📬 Contact
+## 📬 Contact
 
 Have ideas, feedback, or just want to say hi?
 
-Open an issue or contact the mentors via GitHub.
+- 🛠️ Open an issue in the repository  
+- 📧 Contact our mentor:
 
-Mentor:Harmanpreet
+**Mentor**: Harmanpreet  
+**GitHub**: [Harman-2](https://github.com/Harman-2)
 
-github:https://github.com/Harman-2
+---
 
-thank you :)
+Thank you for visiting! 🙏
+
 
