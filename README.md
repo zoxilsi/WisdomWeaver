@@ -3,6 +3,18 @@
 A real-time, AI-powered chatbot that provides **mental health support and spiritual guidance** using teachings from the **Bhagavad Gita**. Ask life questions and receive structured answers powered by **Google Gemini API**, displayed in a clean and friendly **Streamlit interface**.
 
 ---
+## ❓ Why Use WisdomWeaver?
+
+In today’s fast-paced world, we often face stress, confusion, and emotional challenges. **WisdomWeaver** bridges ancient spiritual wisdom with modern AI to help you:
+
+- 🧘‍♀️ Reflect deeply on life problems with timeless Gita teachings.
+- 💡 Get practical and philosophical advice tailored to your questions.
+- 🌿 Improve mental well-being with spiritually grounded responses.
+- 🔄 Understand the Gita verse-by-verse with contextual insights.
+
+Whether you're spiritually inclined, curious about the Gita, or just looking for calm guidance — this tool is made for **you**.
+
+---
 
 ## 📽️ Demo :
 https://bkins-wisdomweaver.streamlit.app/
@@ -55,6 +67,16 @@ https://bkins-wisdomweaver.streamlit.app/
 - pip (Python package installer)
 - Google Gemini API Key ([Get one here](https://aistudio.google.com/app/apikey))
 
+## 🔑 Generating Your Google Gemini API Key
+
+To use the Google Gemini API, follow these steps to generate your API key:
+
+1. Go to the [Google AI Studio](https://makersuite.google.com/app) website.
+2. Sign in with your Google account.
+3. Click on **"Create API Key in new project"** or select an existing project to generate a new key.
+4. Copy the generated API key.  
+   📌 **Note:** You’ll need this key for authentication in the next step.
+
 ### 🚀 Installation
 
 1. **Clone the repository**
@@ -79,11 +101,25 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 🔑 API Key Configuration
-1. Create a `.env` file in the root directory:
+## 🔑 API Key Configuration
+
+To securely use your Google Gemini API key in the **WisdomWeaver** project:
+
+### 1. Create a `.env` file  
+In the root directory of your project (where `main.py` and `requirements.txt` are located), create a new file named `.env`.
+
+### 2. Add your API key to `.env`  
+Open the `.env` file and add the following line (replace `your_api_key_here` with the actual key you generated earlier):
+-change .env.example to .env
 ```env
 GOOGLE_API_KEY=your_api_key_here
-```
+
+### 🔔 Important Notes
+
+- 🔒 **Never share your API key publicly.**
+- ✅ **Make sure your `.env` file is excluded from version control** (e.g., Git).
+- 📁 **The `.gitignore` file should already contain an entry for `.env`.** Double-check if you're unsure.
+
 
 ### ▶️ Run the Application
 
@@ -100,8 +136,14 @@ source venv/bin/activate
 ```bash
 streamlit run app.py
 ```
+### 🌐 Open in Browser
 
-3. **Open your browser** and go to `http://localhost:8501`
+Once the app starts, **WisdomWeaver** will automatically open in your default web browser at:
+
+[http://localhost:8501](http://localhost:8501)
+
+If it doesn’t open automatically, simply copy and paste the URL into your browser.
+
 
 ### 🔧 Troubleshooting
 
