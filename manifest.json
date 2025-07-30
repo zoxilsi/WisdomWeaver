@@ -1,0 +1,88 @@
+{
+  "name": "Bhagavad Gita Wisdom Weaver",
+  "short_name": "WisdomWeaver",
+  "description": "AI-powered spiritual guidance from Bhagavad Gita with real-time emotion detection",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6b35",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["lifestyle", "health", "education"],
+  "icons": [
+    {
+      "src": "/static/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/Public/Images/WhatsApp Image 2024-11-18 at 11.40.34_076eab8e.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "platform": "wide",
+      "label": "WisdomWeaver main interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chat with Gita AI",
+      "short_name": "Chat",
+      "description": "Start a conversation with the AI",
+      "url": "/?mode=chat",
+      "icons": [{"src": "/static/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Browse Verses",
+      "short_name": "Verses",
+      "description": "Explore Bhagavad Gita verses",
+      "url": "/?mode=verses",
+      "icons": [{"src": "/static/icon-192.png", "sizes": "192x192"}]
+    }
+  ]
+}

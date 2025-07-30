@@ -614,6 +614,55 @@ def render_enhanced_sidebar():
             st.sidebar.markdown(f"• {fav}")
     else:
         st.sidebar.info("No favorites saved yet")
+    
+    # PWA Installation Section
+    st.sidebar.markdown("---")
+    st.sidebar.title("📱 Install App")
+    st.sidebar.markdown("**Get WisdomWeaver as a mobile app!**")
+    
+    # PWA Install Button
+    if st.sidebar.button("📲 Install on Device", key="install_pwa"):
+        st.sidebar.markdown("""
+        <script>
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    window.deferredPrompt = null;
+                });
+            } else {
+                alert('App installation is available in supported browsers. Look for the install icon in your browser address bar!');
+            }
+        </script>
+        """, unsafe_allow_html=True)
+    
+    # Manual instructions for iOS and other devices
+    with st.sidebar.expander("📖 Manual Install Instructions"):
+        st.markdown("""
+        **For iPhone/iPad (Safari):**
+        1. Tap the Share button (square with arrow)
+        2. Select "Add to Home Screen"
+        3. Tap "Add" to install
+        
+        **For Android (Chrome):**
+        1. Look for the install icon in address bar
+        2. Tap "Install" when prompted
+        3. Or use menu → "Add to Home screen"
+        
+        **For Desktop:**
+        1. Look for install icon in address bar
+        2. Click to install as desktop app
+        """)
+    
+    # Download links
+    st.sidebar.markdown("**Download Options:**")
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        st.markdown(f'<a href="/manifest.json" download="manifest.json" style="text-decoration: none;"><button style="background: #ff6b35; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">📋 Manifest</button></a>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<a href="/pwa.html" target="_blank" style="text-decoration: none;"><button style="background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">🌐 PWA Page</button></a>', unsafe_allow_html=True)
 
 def create_downloadable_content(chat_history: List[Dict]) -> str:
     """Formats the chat history into a readable string for download."""
@@ -649,6 +698,65 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # PWA Configuration - Add meta tags and service worker
+    st.markdown("""
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="AI-powered spiritual guidance from Bhagavad Gita with real-time emotion detection">
+        <meta name="theme-color" content="#ff6b35">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="WisdomWeaver">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="apple-touch-icon" href="/static/icon-192.png">
+        
+        <!-- Service Worker Registration -->
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                });
+            }
+            
+            // PWA Install Prompt
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                // Show install button in your UI
+                showInstallPromotion();
+            });
+            
+            function showInstallPromotion() {
+                // You can show a custom install promotion here
+                console.log('PWA install promotion available');
+            }
+            
+            // Handle install
+            function installPWA() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            }
+            
+            // Track app installation
+            window.addEventListener('appinstalled', (evt) => {
+                console.log('PWA was installed');
+            });
+        </script>
+    </head>
+    """, unsafe_allow_html=True)
 
     # Initialize session state first, before any other operations
     initialize_session_state()

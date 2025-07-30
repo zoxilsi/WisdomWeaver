@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhagavad Gita Wisdom Weaver</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="AI-powered spiritual guidance from Bhagavad Gita with real-time emotion detection">
+    <meta name="theme-color" content="#ff6b35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WisdomWeaver">
+    <meta name="msapplication-TileImage" content="/static/icon-144.png">
+    <meta name="msapplication-TileColor" content="#ff6b35">
+    
+    <!-- Manifest Link -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicon and Apple Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icon-72.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icon-72.png">
+    <link rel="apple-touch-icon" href="/static/icon-152.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icon-192.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/static/icon-192.png">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Bhagavad Gita Wisdom Weaver">
+    <meta property="og:description" content="AI-powered spiritual guidance from Bhagavad Gita">
+    <meta property="og:image" content="/static/icon-512.png">
+    <meta property="og:url" content="/">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Bhagavad Gita Wisdom Weaver">
+    <meta name="twitter:description" content="AI-powered spiritual guidance from Bhagavad Gita">
+    <meta name="twitter:image" content="/static/icon-512.png">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            background: url('/static/icon-192.png') center/cover;
+            border-radius: 50%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            margin: 0 0 10px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .features {
+            text-align: left;
+            margin: 30px 0;
+        }
+        
+        .feature {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 20px 10px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .install-prompt {
+            background: rgba(255, 235, 59, 0.2);
+            border: 2px solid #ffeb3b;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .install-button {
+            background: #4caf50;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .cta-button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo"></div>
+        <h1>🕉️ Wisdom Weaver</h1>
+        <p class="subtitle">AI-powered spiritual guidance from Bhagavad Gita</p>
+        
+        <div class="features">
+            <div class="feature">🧘‍♂️ <strong>AI Spiritual Guidance:</strong> Get personalized wisdom from the Bhagavad Gita</div>
+            <div class="feature">📱 <strong>Real-time Emotion Detection:</strong> Webcam-based mood analysis</div>
+            <div class="feature">📖 <strong>Complete Gita Access:</strong> Browse all 700 verses with translations</div>
+            <div class="feature">💾 <strong>Offline Access:</strong> Save favorites and access wisdom offline</div>
+            <div class="feature">🎯 <strong>Theme-based Guidance:</strong> Life, relationships, work, and spiritual growth</div>
+        </div>
+        
+        <div class="install-prompt" id="installPrompt">
+            <h3>📲 Install Wisdom Weaver</h3>
+            <p>Install this app on your device for the best experience!</p>
+            <button class="install-button" id="installButton">Install App</button>
+            <button class="install-button" onclick="hideInstallPrompt()" style="background: #f44336;">Maybe Later</button>
+        </div>
+        
+        <a href="/" class="cta-button">🚀 Launch App</a>
+        <a href="/manifest.json" class="cta-button" download>📋 Download Manifest</a>
+    </div>
+
+    <script>
+        // PWA Installation
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installButton = document.getElementById('installButton');
+
+        // Check if app is already installed
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallPrompt();
+        });
+
+        function showInstallPrompt() {
+            installPrompt.style.display = 'block';
+        }
+
+        function hideInstallPrompt() {
+            installPrompt.style.display = 'none';
+        }
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                deferredPrompt = null;
+                hideInstallPrompt();
+            }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Track PWA usage
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA was installed');
+            hideInstallPrompt();
+        });
+
+        // Handle standalone mode
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+            console.log('PWA is running in standalone mode');
+            document.body.style.paddingTop = '20px';
+        }
+
+        // Add to homescreen prompt for iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone;
+
+        if (isIOS && !isStandalone) {
+            const iosPrompt = document.createElement('div');
+            iosPrompt.innerHTML = `
+                <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 15px; text-align: center; z-index: 1000;">
+                    <p style="margin: 0 0 10px;">📱 Install this app on your iPhone:</p>
+                    <p style="margin: 0; font-size: 0.9em;">Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></p>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: #ff6b35; border: none; color: white; padding: 8px 16px; border-radius: 20px; margin-top: 10px;">Got it!</button>
+                </div>
+            `;
+            document.body.appendChild(iosPrompt);
+        }
+    </script>
+</body>
+</html>
